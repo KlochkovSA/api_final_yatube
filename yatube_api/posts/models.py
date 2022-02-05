@@ -24,3 +24,26 @@ class Comment(models.Model):
     text = models.TextField()
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
+
+
+class Follow(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User,
+                             verbose_name='Подписчик',
+                             related_name='follower',
+                             on_delete=models.CASCADE
+                             )
+    following = models.ForeignKey(User,
+                                  related_name='following',
+                                  verbose_name='Автор',
+                                  on_delete=models.CASCADE
+                                  )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['following', 'user'],
+                condition=~models.Q(user=models.F('following')),
+                name='no_self_subscription'
+            ),
+        ]
