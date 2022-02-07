@@ -1,14 +1,47 @@
-from rest_framework import filters, status
+from django.shortcuts import get_object_or_404
+from rest_framework import filters, mixins, status
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from posts.models import Follow
-from .serializers import FollowListSerializer, FollowPostSerializer
+from posts.models import Follow, Group, Post
+from .permissions import IsAuthorOrReadOnly
+from .serializers import (CommentSerializer, FollowListSerializer,
+                          FollowPostSerializer, GroupSerializer,
+                          PostSerializer)
 
 
-class FollowView(ListCreateAPIView):
+class CommentViewSet(ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthorOrReadOnly]
+
+    def get_queryset(self):
+        post_id = self.kwargs['post_id']
+        post = get_object_or_404(Post, pk=post_id)
+        return post.comments
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class PostViewSet(ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthorOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+
+class GroupViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                   GenericViewSet):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+
+
+class FollowViewSet(ListCreateAPIView):
     authentication_classes = (JWTAuthentication,)
     serializer_class = FollowListSerializer
     permission_classes = [IsAuthenticated]
@@ -23,8 +56,8 @@ class FollowView(ListCreateAPIView):
         return self.list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        is_empty = len(request.data) != 0
-        if is_empty and request.data['following'] != request.user.username:
+        is_not_empty = len(request.data) != 0
+        if is_not_empty and request.data['following'] != request.user.username:
             context = {
                 'request': self.request,
             }

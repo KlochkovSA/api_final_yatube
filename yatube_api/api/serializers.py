@@ -3,13 +3,15 @@ from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
 
-from posts.models import Comment, Follow, Post
+from posts.models import Comment, Follow, Group, Post
 
 User = get_user_model()
 
 
 class PostSerializer(serializers.ModelSerializer):
-    author = SlugRelatedField(slug_field='username', read_only=True)
+    author = SlugRelatedField(slug_field='username',
+                              read_only=True,
+                              default=serializers.CurrentUserDefault())
 
     class Meta:
         fields = '__all__'
@@ -17,13 +19,22 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(
-        read_only=True, slug_field='username'
+    author = SlugRelatedField(
+        read_only=True,
+        slug_field='username',
+        default=serializers.CurrentUserDefault(),
     )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'author', 'post', 'text', 'created')
         model = Comment
+
+
+class GroupSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('id', 'title', 'slug', 'description')
+        model = Group
 
 
 class FollowListSerializer(serializers.ModelSerializer):
@@ -47,7 +58,7 @@ class FollowPostSerializer(serializers.ModelSerializer):
         slug_field='username',
         queryset=User.objects.all()
     )
-    user = serializers.SlugRelatedField(
+    user = SlugRelatedField(
         default=serializers.CurrentUserDefault(),
         read_only=True,
         slug_field='username'
@@ -62,3 +73,9 @@ class FollowPostSerializer(serializers.ModelSerializer):
                 fields=['user', 'following']
             )
         ]
+
+        def validate(self, data):
+            if data['user'] == data['following']:
+                raise serializers.ValidationError(
+                    'Невозможно подписаться на самого себя!')
+            return data
