@@ -12,13 +12,10 @@ router.register('posts', PostViewSet)
 router.register('groups', GroupViewSet)
 router.register(r'posts/(?P<post_id>\d+)/comments',
                 CommentViewSet, 'comments')
-
+router.register('follow', FollowViewSet, 'follow')
 
 urlpatterns = [
     path('v1/api-token-auth/', views.obtain_auth_token),
-    path('v1/follow/', FollowViewSet.as_view()),
-
-
     path('v1/jwt/create/', TokenObtainPairView.as_view(),
          name='token_obtain_pair'),
     path('v1/jwt/refresh/', TokenRefreshView.as_view(),
