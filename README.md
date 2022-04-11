@@ -25,9 +25,6 @@ python3 yatube_api/manage.py makemigrations
 python3 yatube_api/manage.py runserver
 ```
 
-Примеры:
-api final
-fdgrd
 
 ### Примеры:
 Получение списка публикаций
