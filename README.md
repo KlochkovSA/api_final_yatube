@@ -29,7 +29,7 @@ python3 yatube_api/manage.py runserver
 api final
 fdgrd
 
-###Примеры:
+### Примеры:
 Получение списка публикаций
 ````
 GET     /api/v1/posts/
